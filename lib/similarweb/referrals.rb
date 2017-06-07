@@ -1,7 +1,7 @@
 module SimilarWeb
   module Referrals
-    def referrals(domain)
-      request_old("#{domain}/v2/leadingreferringsites")
+    def referrals(domain, params = {})
+      request_new("#{domain}/traffic-sources/referrals", params)
     end
   end
 end
