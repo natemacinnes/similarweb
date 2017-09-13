@@ -70,7 +70,7 @@ module SimilarWeb
 
     def convert_date(date)
       if date.is_a? DateTime or date.is_a? Date or date.is_a? Time
-        date.strftime("%Y-%m")
+        date.strftime("%Y-%m-%d")
       elsif date.is_a? String
         date
       else

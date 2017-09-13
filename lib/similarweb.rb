@@ -22,6 +22,7 @@ require 'similarweb/bounce_rate'
 require 'similarweb/global_rank'
 require 'similarweb/overview'
 require 'similarweb/overview_share'
+require 'similarweb/traffic_by_country'
 require 'similarweb/client'
 
 
