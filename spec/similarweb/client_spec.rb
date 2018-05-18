@@ -1,8 +1,13 @@
 require 'spec_helper'
 
+RSpec.configure do |c|
+  c.include Helpers
+end
+
 describe SimilarWeb::Client do
   before do
     @client = SimilarWeb::Client.new(api_key: 'test-key')
+    @date = Date.today.prev_month.strftime('%Y-%m')
   end
 
   describe '.api_key' do
@@ -13,35 +18,34 @@ describe SimilarWeb::Client do
 
   describe '.referrals' do
     before(:each) do
-      body = <<-eos
-        {
-         "Sites": [
-          "bleacherreport.com",
-          "spox.com",
-          "sportal.com.au",
-          "espn.go.com",
-          "en.wikipedia.org",
-          "nba.co.jp",
-          "search.tb.ask.com",
-          "gazzetta.it",
-          "baloncesto.as.com",
-          "forums.realgm.com"
-         ],
-         "StartDate": "01/2014",
-         "EndDate": "03/2014"
-        }
-      eos
+      body = load_fixture 'referrals'
 
-      stub_request(:get, "https://api.similarweb.com/Site/example.com/v2/leadingreferringsites?Format=JSON&UserKey=test-key").
-        with(:headers => {'Accept'=>'*/*', 'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'User-Agent'=>'Faraday v0.9.2'}).
+      stub_request(
+        :get,
+        "https://api.similarweb.com/v1/website/cnn.com/traffic-sources/referrals?").
+        with(
+          :headers => {
+            'Accept'=>'*/*', 
+            'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 
+            'User-Agent'=>'Faraday v0.9.2'
+          },
+          :query => {
+            'api_key'=>'test-key',
+            'end_date'=>@date,
+            'start_date'=>@date,
+            'granularity'=>'daily',
+            'main_domain_only'=>false
+          }
+
+      ).
         to_return(:status => 200, :body => body, :headers => {})
 
-      @referrals = @client.referrals('example.com')
+        @referrals = @client.referrals('cnn.com')
     end
 
     it 'should return a list of referral sites' do
-      expect( @referrals ).to have_key('Sites')
-      expect( @referrals['Sites']).to be_a(Array)
+      expect( @referrals ).to have_key('referrals')
+      expect( @referrals['referrals']).to be_a(Array)
     end
   end
 
@@ -698,24 +702,25 @@ describe SimilarWeb::Client do
     before(:each) do
       body = <<-eos
         {
-         "Category": "Sports/Basketball",
-         "CategoryRank": 1
+         "category": "Sports/Basketball",
+         "rank": 1
         }
       eos
 
-      stub_request(:get, "https://api.similarweb.com/Site/example.com/v2/CategoryRank?Format=JSON&UserKey=test-key").
+      stub_request(:get, "https://api.similarweb.com/v1/website/facebook.com/category-rank/category-rank?Format=JSON&UserKey=test-key").
         with(:headers => {'Accept'=>'*/*', 'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'User-Agent'=>'Faraday v0.9.2'}).
         to_return(:status => 200, :body => body, :headers => {})
 
-      @category_rank = @client.category_rank('example.com')
+      @category_rank = @client.category_rank('facebook.com')
     end
 
     it 'should return a category' do
-      expect( @category_rank ).to have_key('Category')
+      puts @category_rank
+      expect( @category_rank ).to have_key('category')
     end
 
     it 'should return a rank' do
-      expect( @category_rank ).to have_key('CategoryRank')
+      expect( @category_rank ).to have_key('rank')
     end
   end
 
@@ -799,43 +804,25 @@ describe SimilarWeb::Client do
 
   describe '.similar_sites' do
     before(:each) do
-      body = <<-eos
-        {
-         "SimilarSites": [
-          {
-           "Url": "pbskids.org",
-           "Score": 0.9012942574949001
-          },
-          {
-           "Url": "nick.com",
-           "Score": 0.7312487797958783
-          },
-          {
-           "Url": "kids.yahoo.com",
-           "Score": 0.6653412685291096
-          }
-          ]
-        }
-      eos
-
-      stub_request(:get, "https://api.similarweb.com/Site/disney.com/v2/similarsites?Format=JSON&UserKey=test-key").
+      body = File.new('fixtures/similar_sites.json').read
+      stub_request(:get, "https://api.similarweb.com/v1/website/google.com/similar-sites/similarsites?Format=JSON&UserKey=test-key").
         with(:headers => {'Accept'=>'*/*', 'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3', 'User-Agent'=>'Faraday v0.9.2'}).
         to_return(:status => 200, :body => body, :headers => {})
 
-      @similar_sites = @client.similar_sites('disney.com')
+      @similar_sites = @client.similar_sites('google.com')
     end
 
     it 'should return a list of similar sites' do
-      expect(@similar_sites["SimilarSites"]).to be_a(Array)
+      expect(@similar_sites["similar_sites"]).to be_a(Array)
     end
 
     describe 'site tags' do
       it 'should have a name' do
-        expect(@similar_sites["SimilarSites"].first).to have_key('Url')
+        expect(@similar_sites["similar_sites"].first).to have_key('url')
       end
 
       it 'should have a score' do
-        expect(@similar_sites["SimilarSites"].first).to have_key('Score')
+        expect(@similar_sites["similar_sites"].first).to have_key('score')
       end
     end
   end
@@ -918,5 +905,4 @@ describe SimilarWeb::Client do
       end
     end
   end
-
 end
